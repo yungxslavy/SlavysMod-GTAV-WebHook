@@ -4,6 +4,7 @@ using System.Net;
 using System.Collections.Generic;
 using System;
 using System.IO;
+using SlavysMod.Models;
 
 namespace SlavysMod
 {
@@ -13,39 +14,38 @@ namespace SlavysMod
         public readonly string HostName = "localhost";
         public readonly int Port = 6969;
 
-        private readonly HttpListener _listener = new HttpListener();
+        private readonly HttpListener listener = new HttpListener();
+        private readonly HtmlLibrary htmlPages = new HtmlLibrary();
         private Queue<Commands> commandQueue = new Queue<Commands>();
         public void Start()
         {
-            Console.WriteLine("Starting server at " + HostName + ":" + Port.ToString());
-            _listener.Prefixes.Add("http://" + HostName + ":" + Port.ToString() + "/");
-            _listener.Start();
+            Logger.ClearLog();
+            Logger.Log("Starting server at " + HostName + ":" + Port.ToString());
+            listener.Prefixes.Add("http://" + HostName + ":" + Port.ToString() + "/");
+            listener.Start();
             Receive();
         }
 
         public void Stop()
         {
-            _listener.Stop();
-            _listener.Close();
+            listener.Stop();
+            listener.Close();
         }
 
         private void Receive()
         {
-            _listener.BeginGetContext(new AsyncCallback(CallBackMethod), _listener);
+            listener.BeginGetContext(new AsyncCallback(CallBackMethod), listener);
         }
 
         private void CallBackMethod(IAsyncResult result)
         {
-            if (_listener.IsListening)
+            if (listener.IsListening)
             {
-                HttpListenerContext context = _listener.EndGetContext(result);
+                HttpListenerContext context = listener.EndGetContext(result);
                 HttpListenerRequest request = context.Request;
                 HttpListenerResponse response = context.Response;
                 string username = "";
                 string responseString;
-
-                Console.WriteLine("Request received: " + request.HttpMethod + " " + request.Url);
-                Console.WriteLine("RawURL: " + request.RawUrl);
 
                 // Handle command from POST
                 if (request.HttpMethod == "POST" && request.HasEntityBody)
@@ -61,19 +61,30 @@ namespace SlavysMod
                     }
                 }
 
-                // Ignore OPTIONS requests to avoid double requests
-                if (request.HttpMethod == "OPTIONS")
+                // Ignore OPTIONS requests to avoid double requests from tikfinity
+                if (request.HttpMethod == "OPTIONS" || request.RawUrl == "/favicon.ico")
                 {
                     responseString = "Ignored Message";
                 }
-                else
+                else if (request.RawUrl == "/")
                 {
+                    // Give the user the index page
+                    responseString = htmlPages.GetIndexPage();
+                        
+                }
+                else if (request.RawUrl == "/logs")
+                {
+                    responseString = Logger.GetLogs();
+                }
+                else
+                { 
                     // Create and queue command
                     Commands currCmd = ProcessDataToCommand(request.RawUrl, username);
                     commandQueue.Enqueue(currCmd);
 
                     // Response when there is a valid command 
                     responseString = $"Command: {currCmd.command} received from: {username}";
+                    Logger.Log($"Processing request {responseString}");
                 }
                 
                 // Build and send the response 
