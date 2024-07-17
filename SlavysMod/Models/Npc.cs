@@ -1,10 +1,5 @@
 ﻿using GTA;
-using CustomUtil;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using GTA.UI;
 using System.Drawing;
 using GTA.Math;
@@ -14,12 +9,11 @@ namespace NpcHandler
     public class Npc
     {
         private readonly Ped Entity = null;
-        private readonly String DisplayName = "null";
-        private readonly int Health = 200;
+        private readonly string DisplayName = "null";
         private DateTime? DeathTime = null;
 
 
-        public Npc(String name, PedHash pedHash, int health, WeaponHash wpHash)
+        public Npc(string name, PedHash pedHash, int health, WeaponHash wpHash)
         {
             this.DisplayName = name;
             this.Entity = SpawnAttackingPedestrian(pedHash, health, wpHash);

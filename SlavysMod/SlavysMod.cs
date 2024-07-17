@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using GTA;
 using GTA.Native;
 using GTA.Math;
-using CustomUtil;
 using NpcHandler;
 
 namespace SlavysMod
