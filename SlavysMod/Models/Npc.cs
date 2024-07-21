@@ -13,14 +13,14 @@ namespace NpcHandler
         private DateTime? DeathTime = null;
 
 
-        public Npc(string name, PedHash pedHash, int health, WeaponHash wpHash)
+        public Npc(string name, PedHash pedHash, WeaponHash wpHash, int health)
         {
             this.DisplayName = name;
-            this.Entity = SpawnAttackingPedestrian(pedHash, health, wpHash);
+            this.Entity = SpawnAttackingPedestrian(pedHash, wpHash, health);
         }
            
         // Function spawns pedestrian on top of player and targets player 
-        private Ped SpawnAttackingPedestrian(PedHash pedHash, int health, WeaponHash wpHash)
+        private Ped SpawnAttackingPedestrian(PedHash pedHash, WeaponHash wpHash, int health)
         {
             // Get the player's character
             Ped player = Game.Player.Character;
@@ -63,11 +63,11 @@ namespace NpcHandler
                    
                 // Name tag
                 PointF pointF = GTA.UI.Screen.WorldToScreen(entityPos, false);
-                new TextElement(DisplayName, pointF, (float)0.6, Color.White, GTA.UI.Font.Pricedown, Alignment.Center).Draw();
+                new TextElement(DisplayName, pointF, (float)0.4, Color.White, GTA.UI.Font.Pricedown, Alignment.Center).Draw();
                 
                 // Health tag
                 PointF healthPoint = GTA.UI.Screen.WorldToScreen(entityHead, false);
-                new TextElement(Entity.Health.ToString(), healthPoint, (float)0.6, Color.Green, GTA.UI.Font.Pricedown, Alignment.Center).Draw();
+                new TextElement(Entity.Health.ToString(), healthPoint, (float)0.4, Color.Green, GTA.UI.Font.Pricedown, Alignment.Center).Draw();
             }
         }
 

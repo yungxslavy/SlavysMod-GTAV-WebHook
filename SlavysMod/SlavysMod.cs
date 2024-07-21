@@ -10,17 +10,17 @@ namespace SlavysMod
 {
     public class Main : Script
     {
-        private List<Npc> npcList = new List<Npc>();
+        private readonly List<Npc> npcList = new List<Npc>();
         private readonly Server httpServer = new Server();
-        private readonly int maxNpcLimit = 10;
+        private readonly int maxNpcLimit = 25;
         private bool isServerRunning = false;
 
         public Main()
         {
-            Tick += onTick;
-            KeyDown += onKeyDown;
+            Tick += OnTick;
+            KeyDown += OnKeyDown;
         }
-        private void onTick(object sender, EventArgs e)
+        private void OnTick(object sender, EventArgs e)
         {
             // Start the server if it's not running
             if (!isServerRunning)
@@ -32,12 +32,12 @@ namespace SlavysMod
             CommandSystem(); // Handle commands from the server
             AttackerSystem(); // Handle NPC attackers
         }
-        private void onKeyDown(object sender, KeyEventArgs e)
+        private void OnKeyDown(object sender, KeyEventArgs e)
         {
             // Useful for debugging 
             if (e.KeyCode == Keys.NumPad3)
             {
-                Npc npc = new Npc("Slavy", PedHash.Blackops01SMY, 420, WeaponHash.Pistol);
+                Npc npc = new Npc("Slavy", Utils.GetRandomPedHash(Utils.MeleePedHashList), WeaponHash.Pistol, 420);
                 npcList.Add(npc);
             }
 
@@ -61,15 +61,29 @@ namespace SlavysMod
             if (cmd == null)
                 return;
 
-            // If there is a command, process it
+            // Here is where the commands are processed and executed
             switch (cmd.command)
             {
-                case "spawn_attacker":
-                    Npc npc = new Npc(cmd.username, PedHash.Blackops01SMY, 420, WeaponHash.Pistol);
-                    npcList.Add(npc);
-
+                case "spawn_meleeattacker":
+                    Npc meleeNpc = new Npc(cmd.username, 
+                        Utils.GetRandomPedHash(Utils.MeleePedHashList), 
+                        Utils.GetRandomWeaponHash(Utils.MeleeWeaponHashList),
+                        420
+                    );
+                    npcList.Add(meleeNpc);
                     Logger.Log("Spawning attacker for: " + cmd.username);
                     break;
+
+                case "spawn_armedattacker":
+                    Npc armedNpc = new Npc(cmd.username, 
+                        Utils.GetRandomPedHash(Utils.ArmedPedHashList),
+                        Utils.GetRandomWeaponHash(Utils.FirearmWeaponHashList), 
+                        500
+                    );
+                    npcList.Add(armedNpc);
+                    Logger.Log("Spawning attacker for: " + cmd.username);
+                    break;
+
                 case "test":
                     if (npcList.Count > 0)
                     {
@@ -89,8 +103,8 @@ namespace SlavysMod
                 // Prevent NPC list from exceeding the limit
                 if (npcList.Count > maxNpcLimit)
                 {
-                    npcList[0].Delete();
-                    npcList.RemoveAt(0);
+                    npcList[0].Delete(); // Deletes the NPC form the game
+                    npcList.RemoveAt(0); // Removes the NPC from the list
                 }
 
                 // Loop each NPC in our list 
