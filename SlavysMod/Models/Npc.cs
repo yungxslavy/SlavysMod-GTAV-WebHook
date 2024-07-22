@@ -8,90 +8,84 @@ namespace NpcHandler
 {
     public class Npc
     {
-        private readonly Ped Entity = null;
-        private readonly string DisplayName = "null";
-        private DateTime? DeathTime = null;
+        private Ped currentPed;
+        private string displayName;
+        private DateTime? deathTime;
 
+        public Ped CurrentPed => currentPed;
+        public string DisplayName => displayName;
+        public DateTime? DeathTime => deathTime;
 
         public Npc(string name, PedHash pedHash, WeaponHash wpHash, int health)
         {
-            this.DisplayName = name;
-            this.Entity = SpawnAttackingPedestrian(pedHash, wpHash, health);
+            this.displayName = name;
+            this.currentPed = SpawnAttackingPedestrian(pedHash, wpHash, health);
         }
-           
+
         // Function spawns pedestrian on top of player and targets player 
         private Ped SpawnAttackingPedestrian(PedHash pedHash, WeaponHash wpHash, int health)
         {
-            // Get the player's character
-            Ped player = Game.Player.Character;
-
-            // Get the player's position and add some height
-            Vector3 spawnPosition = player.Position + new Vector3(0, 0, 3);
-
-            // Define the pedestrian model (change the hash to spawn different models)
-            Model pedestrianModel = new Model(pedHash);
-
-            // Request the model and wait until it's loaded
-            pedestrianModel.Request(500);
-
-            if (pedestrianModel.IsInCdImage && pedestrianModel.IsValid)
+            try
             {
-                while (!pedestrianModel.IsLoaded)
-                    Script.Wait(100);
+                Ped player = Game.Player.Character;
+                Vector3 spawnPosition = player.Position + new Vector3(0, 0, 3);
+                Model pedestrianModel = new Model(pedHash);
 
-                // Create the pedestrian at the spawn position
-                Ped newPed = World.CreatePed(pedestrianModel, spawnPosition);
-                newPed.Task.FightAgainst(player); // Targets the player
-                newPed.Weapons.Give(wpHash, 1000, true, true); // Gives the pedestrian a weapon
-                newPed.Health = health; // Sets the pedestrian's health
+                pedestrianModel.Request(500);
+                if (pedestrianModel.IsInCdImage && pedestrianModel.IsValid)
+                {
+                    DateTime timeout = DateTime.Now.AddSeconds(5);
+                    while (!pedestrianModel.IsLoaded && DateTime.Now < timeout)
+                        Script.Wait(100);
 
-                // Ensure the pedestrian model is no longer needed
-                pedestrianModel.MarkAsNoLongerNeeded();
+                    if (!pedestrianModel.IsLoaded)
+                        throw new Exception("Model could not be loaded in time.");
 
-                return newPed;
+                    Ped newPed = World.CreatePed(pedestrianModel, spawnPosition);
+                    newPed.Task.FightAgainst(player);
+                    newPed.Weapons.Give(wpHash, 1000, true, true);
+                    newPed.Health = health;
+                    pedestrianModel.MarkAsNoLongerNeeded();
+
+                    return newPed;
+                }
             }
-            else return null;
+            catch (Exception ex)
+            {
+                Notification.Show($"Error spawning pedestrian: {ex.Message}");
+            }
+            return null;
         }
 
         public void DrawName()
         {
-            if (Entity != null && DisplayName != null && World.GetDistance(Entity.Position, Game.Player.Character.Position) <= 30 && Entity.IsOnScreen)
+            if (currentPed != null && displayName != null && World.GetDistance(currentPed.Position, Game.Player.Character.Position) <= 30 && currentPed.IsOnScreen)
             {
-                // Positions 
-                Vector3 entityPos = Entity.Position;
+                Vector3 entityPos = currentPed.Position;
                 Vector3 entityHead = entityPos + new Vector3(0, 0, 1);
-                   
-                // Name tag
+
                 PointF pointF = GTA.UI.Screen.WorldToScreen(entityPos, false);
-                new TextElement(DisplayName, pointF, (float)0.4, Color.White, GTA.UI.Font.Pricedown, Alignment.Center).Draw();
-                
-                // Health tag
+                new TextElement(displayName, pointF, 0.4f, Color.White, GTA.UI.Font.Pricedown, Alignment.Center).Draw();
+
                 PointF healthPoint = GTA.UI.Screen.WorldToScreen(entityHead, false);
-                new TextElement(Entity.Health.ToString(), healthPoint, (float)0.4, Color.Green, GTA.UI.Font.Pricedown, Alignment.Center).Draw();
+                new TextElement(currentPed.Health.ToString(), healthPoint, 0.4f, Color.Green, GTA.UI.Font.Pricedown, Alignment.Center).Draw();
             }
         }
 
         public void SetDeathTime()
         {
-            if (Entity.IsDead && DeathTime == null)
-                DeathTime = DateTime.Now;
-            
+            if (currentPed.IsDead && deathTime == null)
+                deathTime = DateTime.Now;
         }
 
         public DateTime? GetDeathTime()
         {
-            return DeathTime;
+            return deathTime;
         }
 
-        // Deletes the object from the world 
-        public void Delete()
+        public void PutIntoVehicle(Vehicle vehicle, VehicleSeat seat)
         {
-            Entity?.Delete();
-        }
-
-        public bool GetIsDead()
-        {
-            return Entity.IsDead;
+            currentPed?.SetIntoVehicle(vehicle, seat);
         }
     }
 }

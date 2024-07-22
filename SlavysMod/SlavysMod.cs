@@ -5,14 +5,19 @@ using GTA;
 using GTA.Native;
 using GTA.Math;
 using NpcHandler;
+using GTA.UI;
+using System.Drawing;
 
 namespace SlavysMod
 {
     public class Main : Script
     {
         private readonly List<Npc> npcList = new List<Npc>();
+        private readonly List<VehicleNpc> vehicleNpcList = new List<VehicleNpc>();
+        private readonly EffectTracker effectTracker = new EffectTracker();
         private readonly Server httpServer = new Server();
         private readonly int maxNpcLimit = 25;
+        private readonly int maxVehicleLimit = 10;
         private bool isServerRunning = false;
 
         public Main()
@@ -30,23 +35,37 @@ namespace SlavysMod
             }
 
             CommandSystem(); // Handle commands from the server
-            AttackerSystem(); // Handle NPC attackers
+
+            Utils.DrawTextOnScreen($"Gravity Duration: {effectTracker.GravityEffect.GetRemainingDuration()}" +
+                $"\nSpeedBoost Duration: {effectTracker.SpeedBoostEffect.GetRemainingDuration()}",
+                new PointF(GTA.UI.Screen.Width - 10, 50),
+                Alignment.Right
+            );
+
+            Utils.AttackerSystem(npcList, maxNpcLimit); // Handle NPC attackers
+            Utils.VehicleAttackerSystem(vehicleNpcList, maxVehicleLimit); // Handle Vehicle Npc attackers
+            Utils.EffectSystem(effectTracker); // Handle effects
         }
         private void OnKeyDown(object sender, KeyEventArgs e)
         {
             // Useful for debugging 
             if (e.KeyCode == Keys.NumPad3)
             {
-                Npc npc = new Npc("Slavy", Utils.GetRandomPedHash(Utils.MeleePedHashList), WeaponHash.Pistol, 420);
-                npcList.Add(npc);
+                effectTracker.AddEffectDuration(EffectType.Gravity, 3);
             }
 
             if (e.KeyCode == Keys.NumPad1)
             {
+                World.GravityLevel = 9.8f;
                 if (npcList.Count > 0)
                 {
-                    npcList[0].Delete();
+                    npcList[0].CurrentPed.Delete();
                     npcList.RemoveAt(0);
+                }
+                if (vehicleNpcList.Count > 0)
+                {
+                    vehicleNpcList[0].Delete();
+                    vehicleNpcList.RemoveAt(0);
                 }
             }
         }
@@ -84,57 +103,45 @@ namespace SlavysMod
                     Logger.Log("Spawning attacker for: " + cmd.username);
                     break;
 
-                case "test":
-                    if (npcList.Count > 0)
-                    {
-                        npcList[0].Delete();
-                        npcList.RemoveAt(0);
-                    }
+                case "spawn_gangvehicle":
+                    VehicleNpc vehicle = new VehicleNpc(cmd.username, VehicleHash.Baller);
+                    vehicleNpcList.Add(vehicle);
+                    Logger.Log("Spawning gang vehicle");
                     break;
+
+                case "spawn_juggernaut":
+                    Npc juggernaut = new Npc(cmd.command, PedHash.Juggernaut01M, WeaponHash.Minigun, 5000);
+                    juggernaut.CurrentPed.CanSufferCriticalHits = false;
+                    juggernaut.CurrentPed.CanRagdoll = false;
+                    juggernaut.CurrentPed.IsExplosionProof = true;
+                    juggernaut.CurrentPed.FiringPattern = FiringPattern.FullAuto;
+                    npcList.Add(juggernaut);
+                    Logger.Log("Spawning juggernaut for: " + cmd.username);
+                    break;
+
+                case "spawn_astro":
+                    Npc alien = new Npc(cmd.username, PedHash.Movspace01SMM, WeaponHash.UpNAtomizer, 500);
+                    alien.CurrentPed.CanSufferCriticalHits = false;
+                    npcList.Add(alien);
+                    Logger.Log("Spawning astro for: " + cmd.username);
+                    break;
+
+                case "spawn_pirate":
+                    Npc pirate = new Npc(cmd.username, PedHash.Stbla02AMY, WeaponHash.RPG, 1000);
+                    pirate.CurrentPed.CanSufferCriticalHits = false;
+                    pirate.CurrentPed.CanRagdoll = false;
+                    pirate.CurrentPed.IsExplosionProof = true;
+                    npcList.Add(pirate);
+                    Logger.Log("Spawning hancock for: " + cmd.username);
+                    break;
+
+                case "spawn_gravity":
+                    //effectTracker.SpawnGravityEffect();
+                    Logger.Log("Spawning gravity effect");
+                    break;
+
                 default:
                     break;
-            }
-        }
-
-        private void AttackerSystem()
-        {
-            try
-            {
-                // Prevent NPC list from exceeding the limit
-                if (npcList.Count > maxNpcLimit)
-                {
-                    npcList[0].Delete(); // Deletes the NPC form the game
-                    npcList.RemoveAt(0); // Removes the NPC from the list
-                }
-
-                // Loop each NPC in our list 
-                foreach (Npc npc in npcList)
-                {
-                    // Draw the NPC's name 
-                    npc.DrawName();
-
-                    // NPC Death Checker 
-                    if (npc.GetIsDead())
-                    {
-                        if (npc.GetDeathTime() == null)
-                        {
-                            npc.SetDeathTime();
-                        }
-                        else
-                        {
-                            // If dead longer than 5 seconds, delete the NPC
-                            if (DateTime.Now.Subtract(npc.GetDeathTime().Value).TotalSeconds > 5)
-                            {
-                                npc.Delete();
-                                npcList.Remove(npc);
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Failed to draw attacker names - " + ex.Message);
             }
         }
     }

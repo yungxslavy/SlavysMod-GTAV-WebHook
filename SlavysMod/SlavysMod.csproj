@@ -47,6 +47,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Models\EffectTracker.cs" />
+    <Compile Include="Models\VehicleNpc.cs" />
     <Compile Include="Utilities\Logger.cs" />
     <Compile Include="Models\Commands.cs" />
     <Compile Include="Utilities\HtmlLibrary.cs" />
