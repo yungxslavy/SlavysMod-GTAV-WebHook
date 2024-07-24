@@ -13,12 +13,12 @@ namespace SlavysMod
         SpeedBoost
     }
 
-    public struct Effect
+    public class Effect
     {
-        public bool IsActive { get; set; }
-        public int Duration { get; set; }
-        public DateTime? StartTime { get; set; }
-        public EffectType Type { get; set; }
+        public bool IsActive;
+        public int Duration; 
+        public DateTime? StartTime;
+        public EffectType Type;
 
         public void Reset()
         {
@@ -27,6 +27,7 @@ namespace SlavysMod
             StartTime = null;
         }
 
+        // Could be named better but it doesn't start the effect in game, it just sets the start time 
         public void Start()
         {
             IsActive = true;
@@ -41,7 +42,6 @@ namespace SlavysMod
             return Duration - (DateTime.Now - StartTime.Value).Seconds;
         }
 
-        // Method to check if the effect has expired
         public bool HasExpired()
         {
             return IsActive && StartTime.HasValue && DateTime.Now > StartTime.Value + TimeSpan.FromSeconds(Duration);

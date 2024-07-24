@@ -8,27 +8,27 @@ namespace NpcHandler
 {
     public class Npc
     {
-        private Ped currentPed;
-        private string displayName;
+        private readonly Ped currentPed;
+        private readonly string displayName;
         private DateTime? deathTime;
 
         public Ped CurrentPed => currentPed;
-        public string DisplayName => displayName;
-        public DateTime? DeathTime => deathTime;
 
+        // Constructor spawns a pedestrian with a weapon and health
         public Npc(string name, PedHash pedHash, WeaponHash wpHash, int health)
         {
             this.displayName = name;
             this.currentPed = SpawnAttackingPedestrian(pedHash, wpHash, health);
         }
 
-        // Function spawns pedestrian on top of player and targets player 
+        // Spawns a pedestrian on top of the player and targets the player
         private Ped SpawnAttackingPedestrian(PedHash pedHash, WeaponHash wpHash, int health)
         {
             try
             {
-                Ped player = Game.Player.Character;
-                Vector3 spawnPosition = player.Position + new Vector3(0, 0, 3);
+                Ped character = Game.Player.Character;
+                Vector3 camVector = GameplayCamera.ForwardVector * 3;
+                Vector3 spawnPosition = character.Position + new Vector3(camVector.X, camVector.Y, 3);
                 Model pedestrianModel = new Model(pedHash);
 
                 pedestrianModel.Request(500);
@@ -42,7 +42,7 @@ namespace NpcHandler
                         throw new Exception("Model could not be loaded in time.");
 
                     Ped newPed = World.CreatePed(pedestrianModel, spawnPosition);
-                    newPed.Task.FightAgainst(player);
+                    newPed.Task.FightAgainst(character); // Task needed to target player 
                     newPed.Weapons.Give(wpHash, 1000, true, true);
                     newPed.Health = health;
                     pedestrianModel.MarkAsNoLongerNeeded();
@@ -57,6 +57,7 @@ namespace NpcHandler
             return null;
         }
 
+        // Draws the NPC's name on their body and health above their head (note: call per frame)
         public void DrawName()
         {
             if (currentPed != null && displayName != null && World.GetDistance(currentPed.Position, Game.Player.Character.Position) <= 30 && currentPed.IsOnScreen)
@@ -86,6 +87,12 @@ namespace NpcHandler
         public void PutIntoVehicle(Vehicle vehicle, VehicleSeat seat)
         {
             currentPed?.SetIntoVehicle(vehicle, seat);
+        }
+
+        public void Delete()
+        {
+            if (currentPed != null)
+                currentPed?.Delete();
         }
     }
 }

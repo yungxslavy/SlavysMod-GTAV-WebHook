@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using GTA.UI;
 using System.Drawing;
 using NpcHandler;
+using System.ComponentModel;
 
 namespace SlavysMod
 {
@@ -15,15 +16,18 @@ namespace SlavysMod
         private readonly List<Npc> attackers;
         private DateTime? deathTime;
 
+        public Vehicle CurrentVehicle => currentVehicle;
+        public List<Npc> Attackers => attackers;
+
         public VehicleNpc(string name, VehicleHash vehicleHash)
         {
             this.displayName = name;
-            this.attackers = CreateAttackers(4, PedHash.BallaSout01GMY);
             this.currentVehicle = SpawnVehicle(vehicleHash);
+            this.attackers = CreateAttackers(GetVehicleSeatCount(), PedHash.BallaSout01GMY);
             SetAttackersIntoVehicle();
         }
 
-        // Returns a list of Npc Attackers to place in the vehicle
+        // Spawns the attackers and returns the handle to them
         private List<Npc> CreateAttackers(int attackerCount, PedHash pedSkin)
         {
             List<Npc> tempAttackers = new List<Npc>();
@@ -52,11 +56,16 @@ namespace SlavysMod
                 return null;
             }
 
+            // Create some distance from the player to safely spawn the vehicle
             Ped character = Game.Player.Character;
-            Vector3 spawnPosition = character.Position + new Vector3(0.0f, 0.0f, 5.0f) + character.ForwardVector * 10;
-            float spawnHeading = Game.Player.Character.Heading + 90.0f;
+            Vector3 camVector = GameplayCamera.ForwardVector * 10;
+            Vector3 spawnPosition = character.Position + new Vector3(camVector.X, camVector.Y, 5.0f);
 
+            // Rotate the vehicle to be perpendicular to the player
+            float spawnHeading = Game.Player.Character.Heading + 90.0f;
+            
             Vehicle vehicle = World.CreateVehicle(vehicleModel, spawnPosition, spawnHeading);
+            vehicle.IsEngineRunning = true;
 
             if (vehicle == null)
             {
@@ -68,16 +77,16 @@ namespace SlavysMod
             return vehicle;
         }
 
-        // Sets the attackers into the vehicle of this class instance
         private void SetAttackersIntoVehicle()
         {
             if (attackers != null && currentVehicle != null)
             {
-                int seat = -1;
+                int seat = -1; // driver seat starts at -1
 
                 foreach (Npc attacker in attackers)
                 {
-                    if (seat < 3)
+                    // Check if the seat is free to avoid crashing the game
+                    if (CurrentVehicle.IsSeatFree((VehicleSeat)seat))
                     {
                         attacker.PutIntoVehicle(currentVehicle, (VehicleSeat)seat);
                         attacker.CurrentPed.Task.VehicleShootAtPed(Game.Player.Character);
@@ -85,6 +94,23 @@ namespace SlavysMod
                     }
                 }
             }
+        }
+
+        private int GetVehicleSeatCount()
+        {
+            // -2 will never allow a seat to be taken
+            if (currentVehicle == null)
+                return -2;
+
+            // Max seats ~ 12 (bus)
+            int seatCount;
+            for (seatCount = -1; seatCount < 11; seatCount++)
+            {
+                if (!currentVehicle.IsSeatFree((VehicleSeat)seatCount))
+                    break;
+            }
+
+            return seatCount;
         }
 
         // Draws the name on the vehicle
@@ -106,9 +132,9 @@ namespace SlavysMod
             }
         }
 
-        // Sets the death time of the vehicle
         public void SetDeathTime()
         {
+            // Death is when the vehicle explodes
             if (currentVehicle.IsDead && deathTime == null)
                 deathTime = DateTime.Now;
         }
@@ -118,19 +144,21 @@ namespace SlavysMod
             return deathTime;
         }
 
-        // Deletes the object from the world 
+        // Deletes the attackers and the vehicle objects from the game
         public void Delete()
         {
-            currentVehicle?.Delete();
+            if (currentVehicle != null)
+                currentVehicle?.Delete();
+
             if (attackers != null)
             {
                 foreach (Npc attacker in attackers)
                 {
-                    attacker.CurrentPed.Delete();
+                    attacker.Delete();
                 }
             }
         }
-
+        
         public bool GetIsDead()
         {
             return currentVehicle != null && currentVehicle.IsDead;

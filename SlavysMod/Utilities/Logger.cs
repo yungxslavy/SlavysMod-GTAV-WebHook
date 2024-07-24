@@ -11,7 +11,7 @@ namespace SlavysMod
     {
         private readonly static string logName = "SlavysMod.log";
 
-        // Method to log a message
+        // Logs to the file
         public static void Log(string message)
         {
             try
