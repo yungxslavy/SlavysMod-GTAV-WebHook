@@ -25,6 +25,7 @@ namespace SlavysMod
         private DateTime lastDeathTime = DateTime.Now;
         private TimeSpan timeAlive = TimeSpan.Zero;
         private TimeSpan bestTime = TimeSpan.Zero;
+        private Vector3 waypoint = Vector3.Zero;
 
         public Main()
         {
