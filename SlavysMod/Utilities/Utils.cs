@@ -1,7 +1,6 @@
 ﻿using GTA;
 using GTA.Math;
 using GTA.UI;
-using NpcHandler;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -61,29 +60,23 @@ namespace SlavysMod
         }
 
         // Handles player stats and respawn mechanics
-        public static void PlayerSystem(ref int deathCount, ref TimeSpan timeAlive, ref TimeSpan bestTime, ref DateTime lastDeathTime)
+        public static void PlayerSystem(ref int deathCount, ref TimeSpan timeAlive, ref TimeSpan bestTime, ref DateTime lastDeathTime, ref bool deathDebounce)
         {
             timeAlive = DateTime.Now - lastDeathTime;
 
-            if (Game.Player.Character.Health <= 100)
+            if (Game.Player.Character.IsDead && !deathDebounce)
             {
+                deathDebounce = true;
                 RespawnPlayer(ref deathCount, ref bestTime, ref lastDeathTime, timeAlive);
             }
+            else if(!Game.Player.Character.IsDead)
+                deathDebounce = false;
         }
 
         private static void RespawnPlayer(ref int deathCount, ref TimeSpan bestTime, ref DateTime lastDeathTime, TimeSpan timeAlive)
         {
             Ped character = Game.Player.Character;
             character.MaxHealth = 10000;
-            character.Health = 10000;
-            character.Weapons.Give(WeaponHash.Parachute, 1, true, true);
-
-            // Let the death animation play out in a vehicle
-            if (!character.IsInVehicle())
-            {
-                character.Position += new Vector3(0, 0, 200);
-                character.CancelRagdoll();
-            }
 
             // Handle player stats
             deathCount++;

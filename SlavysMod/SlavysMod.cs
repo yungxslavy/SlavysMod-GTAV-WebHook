@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using GTA;
 using GTA.Native;
 using GTA.Math;
-using NpcHandler;
 using GTA.UI;
 using System.Drawing;
 using System.Threading.Tasks;
@@ -17,9 +16,11 @@ namespace SlavysMod
         private readonly List<VehicleNpc> vehicleNpcList = new List<VehicleNpc>();
         private readonly EffectTracker effectTracker = new EffectTracker();
         private readonly Server httpServer = new Server();
-        private readonly int maxNpcLimit = 25;
-        private readonly int maxVehicleLimit = 10;
+        private readonly int maxNpcLimit = 50;
+        private readonly int maxVehicleLimit = 25;
         private bool isServerRunning = false;
+        private bool showUI = true;
+        private bool deathDebounce = false;
         private int deathCount = 0;
         private DateTime lastDeathTime = DateTime.Now;
         private TimeSpan timeAlive = TimeSpan.Zero;
@@ -34,7 +35,8 @@ namespace SlavysMod
         private void OnTick(object sender, EventArgs e)
         {
             StartServerIfNeeded();
-            DisplayPlayerStats();
+            if (showUI)
+                DisplayPlayerStats();
             CommandSystem();
             UpdateSystems();
         }
@@ -64,7 +66,7 @@ namespace SlavysMod
 
         private void UpdateSystems()
         {
-            Utils.PlayerSystem(ref deathCount, ref timeAlive, ref bestTime, ref lastDeathTime);
+            Utils.PlayerSystem(ref deathCount, ref timeAlive, ref bestTime, ref lastDeathTime, ref deathDebounce);
             Utils.AttackerSystem(npcList, maxNpcLimit);
             Utils.VehicleAttackerSystem(vehicleNpcList, maxVehicleLimit);
             Utils.EffectSystem(effectTracker, npcList);
@@ -72,14 +74,26 @@ namespace SlavysMod
 
         private void OnKeyDown(object sender, KeyEventArgs e)
         {
+            // Numpad keys are intended for debugging
             switch (e.KeyCode)
             {
-                case Keys.NumPad3:
-                    ResetEffects();
-                    break;
                 case Keys.NumPad1:
                     DeleteFirstNpc();
                     break;
+                case Keys.NumPad3:
+                    ResetEffects();
+                    break;
+                case Keys.NumPad7:
+                    showUI = !showUI;
+                    break;
+                case Keys.NumPad9:
+                    Game.Player.Character.Health = 10;
+                    break;
+                case Keys.E:
+                    if (Game.Player.Character.IsInVehicle())
+                        Game.Player.Character.CurrentVehicle.ApplyForce(Game.Player.Character.ForwardVector * 200);
+                    break;
+
             }
         }
 
@@ -90,6 +104,8 @@ namespace SlavysMod
             World.GravityLevel = 9.8f;
             Game.Player.Character.CancelRagdoll();
             Game.Player.SetRunSpeedMultThisFrame(1.0f);
+            Game.Player.Character.MaxHealth = 10000;
+            Game.Player.Character.Health = 10000;
         }
 
         private void DeleteFirstNpc()
@@ -114,7 +130,7 @@ namespace SlavysMod
             switch (cmd.command)
             {
                 case "spawn_meleeattacker":
-                    SpawnRandomNpc(cmd, Utils.MeleePedHashList, Utils.MeleeWeaponHashList, 420);
+                    SpawnRandomNpc(cmd, Utils.MeleePedHashList, Utils.MeleeWeaponHashList, 250);
                     break;
                 case "spawn_armedattacker":
                     SpawnRandomNpc(cmd, Utils.ArmedPedHashList, Utils.FirearmWeaponHashList, 500);
@@ -129,7 +145,7 @@ namespace SlavysMod
                     AddEffect(cmd, EffectType.SpeedBoost, 10);
                     break;
                 case "spawn_gravity":
-                    AddEffect(cmd, EffectType.Gravity, 3);
+                    AddEffect(cmd, EffectType.Gravity, 10);
                     break;
                 case "spawn_astro":
                     SpawnAstro(cmd);
@@ -146,15 +162,31 @@ namespace SlavysMod
                 case "spawn_juggernaut":
                     SpawnJuggernaut(cmd);
                     break;
+                case "spawn_zombies":
+                    for (int i = 0 ; i < 1; i++)
+                        SpawnSingularNpc(cmd.username, PedHash.Zombie01, WeaponHash.BattleAxe, 200);
+                    break;
+                case "spawn_group":
+                    for (int i = 0; i < 5; i++)
+                        SpawnRandomNpc(cmd, Utils.ArmedPedHashList, Utils.FirearmWeaponHashList, 300);
+                    break;
             }
         }
 
         private void SpawnRandomNpc(Commands cmd, PedHash[] pedHashList, WeaponHash[] weaponHashList, int health, bool canSufferCriticalHits = true)
         {
             var npc = new Npc(cmd.username, Utils.GetRandomPedHash(pedHashList), Utils.GetRandomWeaponHash(weaponHashList), health);
-            npc.CurrentPed.CanSufferCriticalHits = canSufferCriticalHits;
             npcList.Add(npc);
+            npc.CurrentPed.CanSufferCriticalHits = canSufferCriticalHits;
             Logger.Log($"Spawning attacker for: {cmd.username}");
+        }
+
+        private void SpawnSingularNpc(string username, PedHash pedHash, WeaponHash weaponHash, int health, bool canSufferCriticalHits = true)
+        {
+            var npc = new Npc(username, pedHash, weaponHash, health);
+            npcList.Add(npc);
+            npc.CurrentPed.CanSufferCriticalHits = canSufferCriticalHits;
+            Logger.Log($"Spawning attacker for: {username}");
         }
 
         private void SpawnVehicleNpc(Commands cmd, VehicleHash vehicleHash)
@@ -183,34 +215,18 @@ namespace SlavysMod
         private void SpawnAstro(Commands cmd)
         {
             Npc astro = new Npc(cmd.username, PedHash.Movspace01SMM, WeaponHash.UpNAtomizer, 500);
-            astro.CurrentPed.CanSufferCriticalHits = false;
             npcList.Add(astro);
+            astro.CurrentPed.CanSufferCriticalHits = false;
             Logger.Log("Spawning astro for: " + cmd.username);
         }
         private void SpawnPirate(Commands cmd)
         {
             Npc pirate = new Npc(cmd.username, PedHash.Stbla02AMY, WeaponHash.RPG, 1000);
+            npcList.Add(pirate);
             pirate.CurrentPed.CanSufferCriticalHits = false;
             pirate.CurrentPed.CanRagdoll = false;
             pirate.CurrentPed.IsExplosionProof = true;
-            npcList.Add(pirate);
             Logger.Log("Spawning pirate for: " + cmd.username);
-        }
-
-        private void SpawnJuggernaut(Commands cmd)
-        {
-            var juggernaut = new Npc(cmd.command, PedHash.Juggernaut01M, WeaponHash.Minigun, 5000)
-            {
-                CurrentPed = 
-                {
-                    CanSufferCriticalHits = false,
-                    CanRagdoll = false,
-                    IsExplosionProof = true,
-                    FiringPattern = FiringPattern.FullAuto
-                }
-            };
-            npcList.Add(juggernaut);
-            Logger.Log($"Spawning juggernaut for: {cmd.username}");
         }
 
         private void SpawnTank(Commands cmd)
@@ -233,6 +249,16 @@ namespace SlavysMod
             plane.CurrentVehicle.Heading = 70.0f;
             plane.CurrentVehicle.ForwardSpeed = 2000;
             Logger.Log($"Spawning plane crash for: {cmd.username}");
+        }
+        private void SpawnJuggernaut(Commands cmd)
+        {
+            Npc juggernaut = new Npc(cmd.username, PedHash.Juggernaut01M, WeaponHash.Minigun, 5000);
+            npcList.Add(juggernaut);
+            juggernaut.CurrentPed.CanSufferCriticalHits = false;
+            juggernaut.CurrentPed.CanRagdoll = false;
+            juggernaut.CurrentPed.IsExplosionProof = true;
+            juggernaut.CurrentPed.FiringPattern = FiringPattern.FullAuto;
+            Logger.Log($"Spawning juggernaut for: {cmd.username}");
         }
     }
 }

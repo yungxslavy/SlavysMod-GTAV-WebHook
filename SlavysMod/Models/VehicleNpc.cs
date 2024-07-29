@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using GTA.UI;
 using System.Drawing;
-using NpcHandler;
 using System.ComponentModel;
 
 namespace SlavysMod
@@ -48,7 +47,7 @@ namespace SlavysMod
 
             DateTime timeout = DateTime.Now.AddSeconds(5);
             while (!vehicleModel.IsLoaded && DateTime.Now < timeout)
-                Script.Wait(100);
+                Script.Wait(50);
 
             if (!vehicleModel.IsLoaded)
             {

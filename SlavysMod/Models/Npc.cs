@@ -4,7 +4,7 @@ using GTA.UI;
 using System.Drawing;
 using GTA.Math;
 
-namespace NpcHandler
+namespace SlavysMod
 {
     public class Npc
     {
@@ -24,35 +24,32 @@ namespace NpcHandler
         // Spawns a pedestrian on top of the player and targets the player
         private Ped SpawnAttackingPedestrian(PedHash pedHash, WeaponHash wpHash, int health)
         {
-            try
-            {
-                Ped character = Game.Player.Character;
-                Vector3 camVector = GameplayCamera.ForwardVector * 3;
-                Vector3 spawnPosition = character.Position + new Vector3(camVector.X, camVector.Y, 3);
-                Model pedestrianModel = new Model(pedHash);
+            
+            Ped character = Game.Player.Character;
+            Vector3 camVector = GameplayCamera.ForwardVector * 3;
+            Vector3 spawnPosition = character.Position + new Vector3(camVector.X, camVector.Y, 3);
+            Model pedestrianModel = new Model(pedHash);
 
-                pedestrianModel.Request(500);
-                if (pedestrianModel.IsInCdImage && pedestrianModel.IsValid)
+            pedestrianModel.Request(500);
+            if (pedestrianModel.IsInCdImage && pedestrianModel.IsValid)
+            {
+                DateTime timeout = DateTime.Now.AddSeconds(5);
+                while (!pedestrianModel.IsLoaded && DateTime.Now < timeout)
+                    Script.Wait(50);
+
+                if (!pedestrianModel.IsLoaded)
                 {
-                    DateTime timeout = DateTime.Now.AddSeconds(5);
-                    while (!pedestrianModel.IsLoaded && DateTime.Now < timeout)
-                        Script.Wait(100);
-
-                    if (!pedestrianModel.IsLoaded)
-                        throw new Exception("Model could not be loaded in time.");
-
-                    Ped newPed = World.CreatePed(pedestrianModel, spawnPosition);
-                    newPed.Task.FightAgainst(character); // Task needed to target player 
-                    newPed.Weapons.Give(wpHash, 1000, true, true);
-                    newPed.Health = health;
-                    pedestrianModel.MarkAsNoLongerNeeded();
-
-                    return newPed;
+                    Logger.Log("Error loading pedestrian model.");
+                    return null;
                 }
-            }
-            catch (Exception ex)
-            {
-                Notification.Show($"Error spawning pedestrian: {ex.Message}");
+
+                Ped newPed = World.CreatePed(pedestrianModel, spawnPosition);
+                newPed.Task.FightAgainst(character); // Task needed to target player 
+                newPed.Weapons.Give(wpHash, 1000, true, true);
+                newPed.Health = health;
+                pedestrianModel.MarkAsNoLongerNeeded();
+
+                return newPed;
             }
             return null;
         }
