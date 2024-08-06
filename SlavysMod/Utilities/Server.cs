@@ -56,7 +56,7 @@ namespace SlavysMod
                     var formData = HttpUtility.ParseQueryString(requestBody);
 
                     if (formData["value1"] != null && formData["value1"] != "")
-                    { 
+                    {
                         username = formData["value1"];
                     }
                 }

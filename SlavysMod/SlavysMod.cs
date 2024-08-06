@@ -16,7 +16,7 @@ namespace SlavysMod
         private readonly List<VehicleNpc> vehicleNpcList = new List<VehicleNpc>();
         private readonly EffectTracker effectTracker = new EffectTracker();
         private readonly Server httpServer = new Server();
-        private readonly int maxNpcLimit = 50;
+        private readonly int maxNpcLimit = 30;
         private readonly int maxVehicleLimit = 25;
         private bool isServerRunning = false;
         private bool showUI = true;
@@ -93,7 +93,9 @@ namespace SlavysMod
                     if (Game.Player.Character.IsInVehicle())
                         Game.Player.Character.CurrentVehicle.ApplyForce(Game.Player.Character.ForwardVector * 200);
                     break;
-
+                case Keys.Insert: 
+                    SpawnSingularNpc("Chuck Norris", PedHash.Jesus01, WeaponHash.SawnOffShotgun, 5000, false);
+                    break;
             }
         }
 
@@ -130,7 +132,7 @@ namespace SlavysMod
             switch (cmd.command)
             {
                 case "spawn_meleeattacker":
-                    SpawnRandomNpc(cmd, Utils.MeleePedHashList, Utils.MeleeWeaponHashList, 250);
+                    SpawnRandomNpc(cmd, Utils.MeleePedHashList, Utils.MeleeWeaponHashList, 100);
                     break;
                 case "spawn_armedattacker":
                     SpawnRandomNpc(cmd, Utils.ArmedPedHashList, Utils.FirearmWeaponHashList, 500);
@@ -145,7 +147,7 @@ namespace SlavysMod
                     AddEffect(cmd, EffectType.SpeedBoost, 10);
                     break;
                 case "spawn_gravity":
-                    AddEffect(cmd, EffectType.Gravity, 10);
+                    AddEffect(cmd, EffectType.Gravity, 5);
                     break;
                 case "spawn_astro":
                     SpawnAstro(cmd);
@@ -235,6 +237,8 @@ namespace SlavysMod
             vehicleNpcList.Add(tank);
             tank.Attackers[0].CurrentPed.Task.VehicleShootAtPed(Game.Player.Character);
             tank.Attackers[0].CurrentPed.FiringPattern = FiringPattern.FullAuto;
+            tank.CurrentVehicle.EngineHealth = 25000;
+            tank.CurrentVehicle.Health = 25000;
             Logger.Log($"Spawning tank for: {cmd.username}");
         }
 
