@@ -16,8 +16,8 @@ namespace SlavysMod
         private readonly List<VehicleNpc> vehicleNpcList = new List<VehicleNpc>();
         private readonly EffectTracker effectTracker = new EffectTracker();
         private readonly Server httpServer = new Server();
-        private readonly int maxNpcLimit = 50;
-        private readonly int maxVehicleLimit = 25;
+        private readonly int maxNpcLimit = 60;
+        private readonly int maxVehicleLimit = 20;
         private bool isServerRunning = false;
         private bool showUI = true;
         private bool deathDebounce = false;
@@ -202,7 +202,7 @@ namespace SlavysMod
             vehicleNpcList.Add(caddy);
             caddy.CurrentVehicle.Heading = Game.Player.Character.Heading + 180.0f;
             caddy.CurrentVehicle.Position = Game.Player.Character.Position + Game.Player.Character.ForwardVector * 10;
-            caddy.CurrentVehicle.ForwardSpeed = 2000.0f;
+            caddy.CurrentVehicle.ApplyForce((Game.Player.Character.Position - caddy.CurrentVehicle.Position).Normalized * 2000);
             Logger.Log($"Spawning car attack for: {cmd.username}");
         }
 
