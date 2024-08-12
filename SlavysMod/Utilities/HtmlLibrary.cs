@@ -12,7 +12,7 @@ namespace SlavysMod.Models
         private static readonly string headerStyle = "style=\"color: #3ab3ff; font-size: 36px;\"";
         private static readonly string paragraphStyle = "style=\"font-size: 18px; color: #f4f4f4;\"";
         private static readonly string linkStyle = "style=\"color: #2196F3; text-decoration: none; font-weight: bold;\"";
-        private static readonly string patreonLink = "\"patreon.com/Slavy\"";
+        private static readonly string patreonLink = "\"https://patreon.com/Slavy\"";
 
         private readonly string index = $"<body {bodyStyle}>\r\n" +
                         $"    <h1 {headerStyle}>Server Is Running! Sweet!!</h1>\r\n" +
