@@ -145,7 +145,7 @@ namespace SlavysMod
                     AddEffect(cmd, EffectType.SpeedBoost, 10);
                     break;
                 case "spawn_gravity":
-                    AddEffect(cmd, EffectType.Gravity, 10);
+                    AddEffect(cmd, EffectType.Gravity, 5);
                     break;
                 case "spawn_astro":
                     SpawnAstro(cmd);
