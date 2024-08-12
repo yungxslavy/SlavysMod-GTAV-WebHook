@@ -130,7 +130,7 @@ namespace SlavysMod
             switch (cmd.command)
             {
                 case "spawn_meleeattacker":
-                    SpawnRandomNpc(cmd, Utils.MeleePedHashList, Utils.MeleeWeaponHashList, 250);
+                    SpawnRandomNpc(cmd, Utils.MeleePedHashList, Utils.MeleeWeaponHashList, 100);
                     break;
                 case "spawn_armedattacker":
                     SpawnRandomNpc(cmd, Utils.ArmedPedHashList, Utils.FirearmWeaponHashList, 500);
