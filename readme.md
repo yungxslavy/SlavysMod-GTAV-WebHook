@@ -25,7 +25,7 @@ After installing and following each releases instructions *(drop the following f
 
 *This does all of the heavy lifting allowing us to run our mod and many other mods that exist*
 
-Now, download the [latest release](#) and drop the SlavysMod.dll file into your */scripts* folder in the game root directory where GTA 5 is installed. 
+Now, download the [latest release](https://github.com/yungxslavy/SlavysMod-GTAV-WebHook/releases) and drop the SlavysMod.dll file into your */scripts* folder in the game root directory where GTA 5 is installed. 
 
 **(optional)**: Lastly, I changed the hotkeys for the menus to `F5` and `F8` in the file *ScriptHookVDotNet.ini* for the SHVDN console and refresh hotkeys. To match this, open the file and overwrite the two sections to this: 
 
